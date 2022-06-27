@@ -1,5 +1,5 @@
 # pornbot91_py
-91视频下载，发送电报
+91视频|好色视频下载，发送电报
 
 
  [English](./README_en.md) 
