@@ -1,13 +1,12 @@
 import asyncio
 import datetime
+import logging
 import os
 import random
 import re
 import shutil
-import sys
 
 import aiohttp
-from aiohttp import TCPConnector
 import ffmpy3
 import jieba
 
@@ -15,7 +14,7 @@ import jieba
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 headers = None
-
+jieba.setLogLevel(logging.ERROR)
 
 async def seg(str):
     try:
@@ -47,8 +46,8 @@ async def genIpaddr():
 
 
 # 下载任务
-@retry(stop=stop_after_attempt(100), wait=wait_fixed(2))
-async def run(url, viewkey,sem):
+@retry(stop=stop_after_attempt(5), wait=wait_fixed(2))
+async def run(url, viewkey, sem):
     if '.mp4' in url:
         os.makedirs(viewkey)
         filename = viewkey + '.mp4'
@@ -57,9 +56,10 @@ async def run(url, viewkey,sem):
 
     # connector = aiohttp.TCPConnector(limit_per_host=1)
     async with sem:
-        async with aiohttp.ClientSession(connector=None) as session:
+        async with aiohttp.ClientSession() as session:
             async with session.get(url) as r:
-                if(r.status==503):
+                # print('下载：',url)
+                if (r.status == 503):
                     print('下载失败,抛出重试')
                     raise RuntimeError('抛出重试')
                 with open(viewkey + '/' + filename, "wb") as fp:
@@ -75,7 +75,7 @@ async def run(url, viewkey,sem):
 
 # 读出ts列表，并写入文件列表到文件，方便后面合并视频
 async def down(url, viewkey):
-    async with aiohttp.request("GET", url, connector=TCPConnector(verify_ssl=False)) as r:
+    async with aiohttp.request("GET", url) as r:
         m3u8_text = await r.text()
         base_url = re.split(r"[a-zA-Z0-9-_\.]+\.m3u8", url)[0]
         lines = m3u8_text.split('\n')
@@ -112,42 +112,14 @@ async def down(url, viewkey):
 def merge(concatfile, viewkey):
     try:
         path = viewkey + '/' + viewkey + '.mp4'
-        # command = 'ffmpeg -y -f concat -i %s -crf 18 -ar 48000 -vcodec libx264 -c:a aac -r 25 -g 25 -keyint_min 25 -strict -2 %s' % (concatfile, path)
-        command = 'ffmpeg -y -f concat -i %s -bsf:a aac_adtstoasc -loglevel quiet -c copy %s' % (concatfile, path)
+        command = '''ffmpeg -y -f concat -i %s -bsf:a aac_adtstoasc -loglevel quiet -c copy  %s''' % (concatfile, path)
         os.system(command)
         print('视频合并完成')
     except:
         print('合并失败')
 
 
-# 视频合并方法，使用ffmpeg
-async def merge2(concatfile, viewkey):
-    path = viewkey + '/' + viewkey + '.mp4'
-    # command = 'ffmpeg -y -f concat -i %s -crf 18 -ar 48000 -vcodec libx264 -c:a aac -r 25 -g 25 -keyint_min 25 -strict -2 %s' % (concatfile, path)
-    command = r'ffmpeg -y -f concat -i %s -bsf:a aac_adtstoasc  -c copy %s' % (concatfile, path)
-    print(command)
-    ff = ffmpy3.FFmpeg(
-        inputs={concatfile: None},
-        outputs={'out.mp4': ['-y', '-f', '-bsf:a', 'aac_adtstoasc', '-c', 'copy']}
-    )
-    print(ff.cmd)
-    _ffmpeg_process = await  ff.run_async(stderr=asyncio.subprocess.PIPE)
-    line_buf = bytearray()
-    my_stderr = _ffmpeg_process.stderr
-    while True:
-        in_buf = (await my_stderr.read(128)).replace(b'\r', b'\n')
-        if not in_buf:
-            break
-        line_buf.extend(in_buf)
-        while b'\n' in line_buf:
-            line, _, line_buf = line_buf.partition(b'\n')
-            print(str(line), file=sys.stderr)
-    await ff.wait()
-
-
-# asyncio.get_event_loop().run_until_complete(merge2('./pyp/video-611022.htm/video-611022.htm.txt', 'video-611022.htm'))
-
-async def download91(url, viewkey,max=500):
+async def download91(url, viewkey, max=200):
     start = datetime.datetime.now().replace(microsecond=0)
     ts_list, concatfile = await down(url, viewkey)
     loop = asyncio.new_event_loop()
@@ -155,7 +127,7 @@ async def download91(url, viewkey,max=500):
     tasks = []
     sem = asyncio.Semaphore(max)  # 控制并发数
     for url in ts_list:
-        task = asyncio.create_task(run(url, viewkey,sem))
+        task = asyncio.create_task(run(url, viewkey, sem))
         tasks.append(task)
 
     await asyncio.wait(tasks)

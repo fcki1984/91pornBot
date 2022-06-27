@@ -4,7 +4,6 @@ from urllib import parse
 from urllib.parse import unquote
 
 import aiohttp
-from aiohttp import TCPConnector
 from faker import Faker
 from pyppeteer import launch
 from tenacity import retry, stop_after_attempt, wait_fixed
@@ -17,11 +16,11 @@ class VideoInfo(object):
     pass
 
 
-@retry(stop=stop_after_attempt(4), wait=wait_fixed(10))
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(10))
 async def getVideoInfo91(url):
     try:
         browser, page = await ini_browser()
-        await asyncio.wait_for(page.goto(url), timeout=30.0)
+        await asyncio.wait_for(page.goto(url, {'waitUntil': 'networkidle0'}), timeout=10.0)
         await page._client.send("Page.stopLoading")
 
         await page.waitForSelector('.video-border')
@@ -84,7 +83,7 @@ async def ini_browser():
                                '--disable-software-rasterizer',
                                '--disable-dev-shm-usage',
                                # log 等级设置，如果出现一大堆warning，可以不使用默认的日志等级
-                               '--log-level=3',
+                               '--log-level=4',
                            ])
     page = await browser.newPage()
     await page.setUserAgent(fake.user_agent())
@@ -114,7 +113,6 @@ async def page91Index():
 async def getHs(url):
     async with aiohttp.request("GET", url,
                                # proxy='http://127.0.0.1:10809',
-                               connector=TCPConnector(verify_ssl=False)
                                ) as r:
         text = await r.text()
         urls = re.findall('<source src="(.*?)"', text)
@@ -140,21 +138,14 @@ async def get91Home():
             return re.findall(r'<h2 class="bio inline_value">\s\s\s\s(.*?)\s\s', await r.text())[0]
 
 
-# headers = {
-#           # 'X-Forwarded-For': await util.genIpaddr(),
-#            'Accept-Language': 'zh-cn,zh;q=0.5',
-#            'User-Agent': fake.user_agent()
-#            }
-
-
+#测试
 async def get91m3u8ByVID():
     p = parse.urlparse('https://hsex.men/video-611022.htm')
     viewkey = p.path.replace('/', '')
     videoInfo = await getHs('https://hsex.men/video-611022.htm')
-    await util.download91(videoInfo.realM3u8, viewkey)
+    await util.download91(videoInfo.realM3u8, viewkey, 5)
 
     # 截图
     await util.imgCover(videoInfo.imgUrl, viewkey + '/' + viewkey + '.jpg')
-#
-#
+
 # asyncio.get_event_loop().run_until_complete(get91m3u8ByVID())
