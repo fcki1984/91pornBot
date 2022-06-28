@@ -5,6 +5,7 @@ import os
 import random
 import re
 import shutil
+from urllib import parse
 
 import aiohttp
 import ffmpy3
@@ -15,6 +16,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 headers = None
 jieba.setLogLevel(logging.ERROR)
+
 
 async def seg(str):
     try:
@@ -37,6 +39,36 @@ async def imgCover(input, output):
     await ff.wait()
 
 
+# 检查字符串出现次数
+def checkStrCount(str_source, str_check):  # str_source：源字符串；str_check：要检查字符
+    splits = str_source.split(str_check)  # 返回拆分数组
+    return len(splits) - 1  # 返回拆分次数-1
+
+
+@retry(stop=stop_after_attempt(4), wait=wait_fixed(10))
+async def imgCoverFromFile(input, output):
+    # ffmpeg -i 001.jpg -vf 'scale=320:320'  001_1.jpg
+    ff = ffmpy3.FFmpeg(
+        inputs={input: None},
+        outputs={output: ['-y', '-vframes', '1', '-loglevel', 'quiet']}
+    )
+    await ff.run_async()
+    await ff.wait()
+
+
+@retry(stop=stop_after_attempt(4), wait=wait_fixed(10))
+async def m3u8ToMp4(input, output):
+    #  ffmpeg  -i "http://xxxxxx/video/movie.m3u8" -vcodec copy -acodec copy -absf aac_adtstoasc  output.mp4
+    ff = ffmpy3.FFmpeg(
+        inputs={input: None},
+        outputs={output: ['-y', '-c', 'copy', ]}
+    )
+    await ff.run_async()
+    await ff.wait()
+
+
+# asyncio.get_event_loop().run_until_complete(m3u8ToMp4('https://vod1.ttbfp2.com/20220611/j0OGqP1T/index.m3u8', 'test/tes.mp4'))
+
 async def genIpaddr():
     m = random.randint(0, 255)
     n = random.randint(0, 255)
@@ -47,13 +79,12 @@ async def genIpaddr():
 
 # 下载任务
 @retry(stop=stop_after_attempt(5), wait=wait_fixed(2))
-async def run(url, viewkey, sem):
+async def run(url, viewkey, sem=asyncio.Semaphore(500)):
     if '.mp4' in url:
         os.makedirs(viewkey)
         filename = viewkey + '.mp4'
     else:
         filename = re.search('([a-zA-Z0-9-_]+.ts)', url).group(1).strip()
-
     # connector = aiohttp.TCPConnector(limit_per_host=1)
     async with sem:
         async with aiohttp.ClientSession() as session:
@@ -77,21 +108,30 @@ async def run(url, viewkey, sem):
 async def down(url, viewkey):
     async with aiohttp.request("GET", url) as r:
         m3u8_text = await r.text()
-        base_url = re.split(r"[a-zA-Z0-9-_\.]+\.m3u8", url)[0]
+        if 'index.m3u8' in m3u8_text:
+            # 请求真实地址
+            hostName = parse.urlparse(url).hostname
+            base_url = 'https://' + hostName
+            lines = m3u8_text.split('\n')
+            async with aiohttp.request("GET", base_url + lines[2]) as r:
+                m3u8_text = await r.text()
+        else:
+            base_url = re.split(r"[a-zA-Z0-9-_\.]+\.m3u8", url)[0]
+
         lines = m3u8_text.split('\n')
         s = len(lines)
         ts_list = list()
         concatfile = viewkey + '/' + viewkey + '.txt'
-        if not os.path.isdir(viewkey):
-            # 尝试删除目录先
-            try:
-                shutil.rmtree(viewkey)
-            except:
-                pass
+        if not os.path.exists(viewkey):
             os.makedirs(viewkey)
         open(concatfile, 'w').close()
         t = open(concatfile, mode='a')
         for i, line in enumerate(lines):
+
+            if ('hls/ts' in line):
+                print('跳过')
+                continue
+
             if '.ts' in line:
                 if 'http' in line:
                     # print("ts>>", line)
@@ -134,3 +174,4 @@ async def download91(url, viewkey, max=200):
     merge(concatfile, viewkey)
     end = datetime.datetime.now().replace(microsecond=0)
     print('写文件及下载耗时：' + str(end - start))
+

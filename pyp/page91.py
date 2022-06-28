@@ -138,14 +138,16 @@ async def get91Home():
             return re.findall(r'<h2 class="bio inline_value">\s\s\s\s(.*?)\s\s', await r.text())[0]
 
 
-#测试
-async def get91m3u8ByVID():
-    p = parse.urlparse('https://hsex.men/video-611022.htm')
-    viewkey = p.path.replace('/', '')
-    videoInfo = await getHs('https://hsex.men/video-611022.htm')
-    await util.download91(videoInfo.realM3u8, viewkey, 5)
+async def getMaDou(url):
+    async with aiohttp.request("GET",url ,
+                               # proxy='http://127.0.0.1:10809',
+                               ) as r:
+        text = await r.text()
+        # print(text)
+        urls = re.findall('"url":"(.*?)","u', text)
+        title = re.findall('<title>(.*?)</title>', text)[0]
+        title=title.split(' - ')[0]
+        m3u8 = urls[0].replace('\\', '')
+        return m3u8,title
 
-    # 截图
-    await util.imgCover(videoInfo.imgUrl, viewkey + '/' + viewkey + '.jpg')
 
-# asyncio.get_event_loop().run_until_complete(get91m3u8ByVID())

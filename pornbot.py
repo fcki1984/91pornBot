@@ -17,6 +17,8 @@ captionTemplate = '''标题: %s
 作者: %s
 关键词： %s
 '''
+captionTemplateMd = '''标题: %s
+'''
 
 buttons = [
     Button.url('11111', 'https://1111111111'),
@@ -75,12 +77,12 @@ async def send_welcome(event):
 
 
 
+
 @bot.on(events.NewMessage)
 async def echo_all(event):
     text = event.text
-
+    sender = await event.get_sender()
     if 'viewkey' in text:  # 处理91的视频
-        sender = await event.get_sender()
 
         if sender.username is None:
             await event.client.send_message(event.chat_id, '请设置用户名后再发送链接')
@@ -97,65 +99,115 @@ async def echo_all(event):
             return
         except:
             print("消息已被删除或不存在，无法转发")
-        videoinfo = await page91.getVideoInfo91(viewkey_url)
-        msg1 = await event.client.send_message(event.chat_id,
-                                               '真实视频地址:' + videoinfo.realM3u8 + ' ,正在下载中... ,请不要一次性发送大量链接,被发现后会被封禁! ! !')
-        title = videoinfo.title
-        if '.mp4' in videoinfo.realM3u8:
-            await  util.run(videoinfo.realM3u8, viewkey)
-        else:
-            await util.download91(videoinfo.realM3u8, viewkey)
-
-        # 截图
-        await util.imgCover(videoinfo.imgUrl, viewkey + '/' + viewkey + '.jpg')
-        segstr = await util.seg(title)
-        msg = await event.reply(
-            '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接', buttons=buttons)
-
-        # 发送视频
-        message = await event.client.send_file(event.chat_id,
-
-                                               viewkey + '/' + viewkey + '.mp4',
-                                               supports_streaming=True,
-                                               thumb=viewkey + '/' + viewkey + '.jpg',
-                                               caption=captionTemplate % (
-                                                   title, videoinfo.scCount, '#' + videoinfo.author, segstr),
-                                               reply_to=event.id,
-                                               )
-        await msg.delete()
-        await msg1.delete()
-        await saveToredis(viewkey, message.id, message.peer_id.user_id)
-        shutil.rmtree(viewkey)
-        print(str(datetime.datetime.now()) + ':' + title + ' 发送成功')
-
+        await handle91(event, viewkey, viewkey_url)
     elif 'hsex.men/video-' in text:  # 补充,不向redis存了
         sender = await event.get_sender()
         if sender.username is None:
             await event.client.send_message(event.chat_id, '请设置用户名后再发送链接')
             return
-        p = parse.urlparse(text)
-        viewkey = p.path.replace('/', '')
-        print("消息来自:" + str(sender.username), ":", text)
-        videoInfo = await page91.getHs(text)
-        await util.download91(videoInfo.realM3u8, viewkey,5)
+        await handleHs(event, sender, text)
+    elif '/vod/play/id' in text:
+        if sender.username is None:
+            await event.client.send_message(event.chat_id, '请设置用户名后再发送链接')
+            return
+        print("消息来自:" + str(sender.username), ":", event.text)
+        # 解析视频id
+        path = parse.urlparse(text).path
+        viewkey = 'md' + path.split('/')[5]
+        viewkey_url = text
 
-        # 截图
-        await util.imgCover(videoInfo.imgUrl, viewkey + '/' + viewkey + '.jpg')
-        segstr = await util.seg(videoInfo.title)
-        msg = await event.reply(
-            '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接', buttons=buttons)
-        # 发送视频
-        await event.client.send_file(event.chat_id,
-                                     viewkey + '/' + viewkey + '.mp4',
-                                     supports_streaming=True,
-                                     thumb=viewkey + '/' + viewkey + '.jpg',
-                                     caption=captionTemplate % (
-                                         videoInfo.title, '000', '#' + videoInfo.author, segstr),
-                                     reply_to=event.id,
-                                     )
-        await msg.delete()
-        shutil.rmtree(viewkey)
-        print(str(datetime.datetime.now()) + ':' + videoInfo.title + ' 发送成功')
+        # redis查询历史数据
+        mid, uid = await getFromredis(viewkey)
+        try:
+            await event.client.forward_messages(event.chat_id, mid, uid)
+            return
+        except:
+            print("消息已被删除或不存在，无法转发")
+        await handleMd(event, viewkey, viewkey_url)
+
+
+async def handleMd(event, viewkey, viewkey_url):
+    # 获取视频信息
+    m3u8Url, title = await page91.getMaDou(viewkey_url)
+    msg1 = await event.client.send_message(event.chat_id,
+                                           '真实视频地址:' + m3u8Url + ' ,正在下载中... ,请不要一次性发送大量链接,被发现后会被封禁! ! !')
+
+    await util.download91(m3u8Url, viewkey)
+    # 截图
+    await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
+    msg = await event.reply(
+        '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接', buttons=buttons)
+
+    # 发送视频
+    message = await event.client.send_file(event.chat_id,
+
+                                           viewkey + '/' + viewkey + '.mp4',
+                                           supports_streaming=True,
+                                           thumb=viewkey + '/' + viewkey + '.jpg',
+                                           caption=captionTemplateMd % (title),
+                                           reply_to=event.id,
+                                           )
+    await msg.delete()
+    await msg1.delete()
+    await saveToredis(viewkey, message.id, message.peer_id.user_id)
+    shutil.rmtree(viewkey)
+    print(str(datetime.datetime.now()) + ':' + title + ' 发送成功')
+
+
+async def handleHs(event, sender, text):
+    p = parse.urlparse(text)
+    viewkey = p.path.replace('/', '')
+    print("消息来自:" + str(sender.username), ":", text)
+    videoInfo = await page91.getHs(text)
+    await util.download91(videoInfo.realM3u8, viewkey, 5)
+    # 截图
+    await util.imgCover(videoInfo.imgUrl, viewkey + '/' + viewkey + '.jpg')
+    segstr = await util.seg(videoInfo.title)
+    msg = await event.reply(
+        '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接', buttons=buttons)
+    # 发送视频
+    await event.client.send_file(event.chat_id,
+                                 viewkey + '/' + viewkey + '.mp4',
+                                 supports_streaming=True,
+                                 thumb=viewkey + '/' + viewkey + '.jpg',
+                                 caption=captionTemplate % (
+                                     videoInfo.title, '000', '#' + videoInfo.author, segstr),
+                                 reply_to=event.id,
+                                 )
+    await msg.delete()
+    shutil.rmtree(viewkey)
+    print(str(datetime.datetime.now()) + ':' + videoInfo.title + ' 发送成功')
+
+
+async def handle91(event, viewkey, viewkey_url):
+    videoinfo = await page91.getVideoInfo91(viewkey_url)
+    msg1 = await event.client.send_message(event.chat_id,
+                                           '真实视频地址:' + videoinfo.realM3u8 + ' ,正在下载中... ,请不要一次性发送大量链接,被发现后会被封禁! ! !')
+    title = videoinfo.title
+    if '.mp4' in videoinfo.realM3u8:
+        await  util.run(videoinfo.realM3u8, viewkey)
+    else:
+        await util.download91(videoinfo.realM3u8, viewkey)
+    # 截图
+    await util.imgCover(videoinfo.imgUrl, viewkey + '/' + viewkey + '.jpg')
+    segstr = await util.seg(title)
+    msg = await event.reply(
+        '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接', buttons=buttons)
+    # 发送视频
+    message = await event.client.send_file(event.chat_id,
+
+                                           viewkey + '/' + viewkey + '.mp4',
+                                           supports_streaming=True,
+                                           thumb=viewkey + '/' + viewkey + '.jpg',
+                                           caption=captionTemplate % (
+                                               title, videoinfo.scCount, '#' + videoinfo.author, segstr),
+                                           reply_to=event.id,
+                                           )
+    await msg.delete()
+    await msg1.delete()
+    await saveToredis(viewkey, message.id, message.peer_id.user_id)
+    shutil.rmtree(viewkey)
+    print(str(datetime.datetime.now()) + ':' + title + ' 发送成功')
 
 
 # 首页视频下载发送
@@ -207,7 +259,7 @@ async def page91DownIndex():
         shutil.rmtree(viewkey)
 
 
-scheduler = AsyncIOScheduler()
+scheduler = AsyncIOScheduler(timezone='Asia/Shanghai')
 scheduler.add_job(page91DownIndex, 'cron', hour=6, minute=50)
 scheduler.start()
 print('开启定时任务!!!')
