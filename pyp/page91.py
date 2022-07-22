@@ -98,16 +98,28 @@ async def ini_browser():
 async def page91Index():
     try:
         browser, page = await ini_browser()
-        await asyncio.wait_for(page.goto('http://91porn.com/index.php', {'waitUntil': 'networkidle0'}), timeout=30.0)
-        await page._client.send("Page.stopLoading")
+        await asyncio.wait_for(page.goto('https://91porn.com/index.php', {'waitUntil': 'domcontentloaded'}),
+                               timeout=30.0)
+        # await page._client.send("Page.stopLoading")
         await page.waitForSelector('#wrapper > div.container.container-minheight > div.row > div > div > a')
         urls = await page.querySelectorAllEval(
             '#wrapper > div.container.container-minheight > div.row > div > div > div > div > a',
             'nodes => nodes.map(node => node.href)')
+        # 首页标题
+        titles = await page.querySelectorAllEval(
+            '#wrapper > div.container.container-minheight > div.row > div > div > div > div > a > span',
+            'nodes => nodes.map(node => node.innerText)')
+        # 首页作者
+        content_ = await page.content()
+        authors = re.findall('作者:</span>([\d\D]*?)<br>', content_)
+        scCounts = re.findall('收藏:</span>([\d\D]*?)<br>', content_)
+        print(titles)
+
     finally:
         await page.close()
         await browser.close()
-    return urls
+    return urls, titles, authors, scCounts
+
 
 
 async def getHs(url):

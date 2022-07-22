@@ -212,25 +212,13 @@ async def handle91(event, viewkey, viewkey_url):
 
 # 首页视频下载发送
 async def page91DownIndex():
-    urls = await page91.page91Index()
+    urls, titles, authors, scCounts = await page91.page91Index()
     # print(urls)
-    for url in urls:
+    for i in range(len(urls)):
+        url = urls[i]
         params = parse.parse_qs(parse.urlparse(url).query)
         viewkey = params['viewkey'][0]
-        # redis查询历史数据
-        mid, uid = await getFromredis(viewkey)
-        if uid != 0:
-            print('消息存在')
-            try:
-                await bot.forward_messages(GROUP_ID, mid, uid)
-                continue
-            except:
-                print('消息转发失败:', url)
-        else:
-            print("消息不存在，无法转发")
         videoinfo = await page91.getVideoInfo91(url)
-        # await bot.send_message(GROUP_ID, '真实视频地址:' + videoinfo.realM3u8)
-        title = videoinfo.title
 
         try:
             # 下载视频
@@ -241,7 +229,7 @@ async def page91DownIndex():
 
         # 截图
         await util.imgCover(videoinfo.imgUrl, viewkey + '/' + viewkey + '.jpg')
-        segstr = await util.seg(title)
+        segstr = await util.seg(titles[i])
         # 发送视频
 
         message = await bot.send_file(GROUP_ID,
@@ -249,14 +237,11 @@ async def page91DownIndex():
                                       supports_streaming=True,
                                       thumb=viewkey + '/' + viewkey + '.jpg',
                                       caption=captionTemplate % (
-                                          title, videoinfo.scCount, '#' + videoinfo.author, segstr),
+                                          titles[i], scCounts[i], '#' + authors[i].strip(), segstr),
+                                      buttons=buttonsGg
                                       )
-        try:
-            fid = message.peer_id.channel_id
-        except:
-            fid = message.peer_id.user_id
-        await saveToredis(viewkey, message.id, fid)
         shutil.rmtree(viewkey)
+        await saveToredis(viewkey, message.id, GROUP_ID)
 
 
 scheduler = AsyncIOScheduler(timezone='Asia/Shanghai')
