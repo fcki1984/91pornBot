@@ -189,7 +189,7 @@ async def handle91(event, viewkey, viewkey_url):
     else:
         await util.download91(videoinfo.realM3u8, viewkey)
     # 截图
-    await util.imgCover(videoinfo.imgUrl, viewkey + '/' + viewkey + '.jpg')
+    await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
     segstr = await util.seg(title)
     msg = await event.reply(
         '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接', buttons=buttons)
@@ -228,7 +228,7 @@ async def page91DownIndex():
             continue
 
         # 截图
-        await util.imgCover(videoinfo.imgUrl, viewkey + '/' + viewkey + '.jpg')
+        await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
         segstr = await util.seg(titles[i])
         # 发送视频
 
