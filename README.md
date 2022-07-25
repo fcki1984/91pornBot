@@ -35,7 +35,14 @@ curl -fsSL get.docker.com -o get-docker.sh && sh get-docker.sh --mirror Aliyun&&
 
 ```
 
-#### 安装docker-compose
+#### 编译docker 镜像
+
+```
+docker build -t jwstar/pybot .
+```
+
+
+#### 安装docker-compose（新版docker可以不安装，因为已经集成进去了,命令把 - 去了就行）
 
 ```yaml
 curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose &&chmod +x /usr/local/bin/docker-compose
@@ -64,7 +71,11 @@ mkdir /pybot
 ### 启动项目
 
 ```yaml
-docker-compose up 
+docker-compose up
+docker-compose up -d #后台运行
+或者
+docker compose up 
+docker compose up -d #后台运行
 ```
 
 ### 本地运行
