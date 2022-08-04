@@ -1,3 +1,7 @@
+import asyncio
+import uvloop
+
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 import datetime
 import os
 import shutil
@@ -244,8 +248,17 @@ async def page91DownIndex():
         await saveToredis(viewkey, message.id, GROUP_ID)
 
 
-scheduler = AsyncIOScheduler(timezone='Asia/Shanghai')
-scheduler.add_job(page91DownIndex, 'cron', hour=6, minute=50)
-scheduler.start()
-print('开启定时任务!!!')
-bot.run_until_disconnected()
+
+async def main():
+    scheduler = AsyncIOScheduler(timezone='Asia/Shanghai')
+    scheduler.add_job(page91DownIndex, 'cron', hour=6, minute=50)
+    scheduler.start()
+    print('bot启动了!!!')
+
+
+loop = asyncio.get_event_loop()
+try:
+    loop.create_task(main())
+    loop.run_forever()
+except KeyboardInterrupt:
+    pass

@@ -9,3 +9,4 @@ jieba
 APScheduler
 ffmpy3
 aiohttp
+uvloop
