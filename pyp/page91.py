@@ -20,7 +20,7 @@ class VideoInfo(object):
 async def getVideoInfo91(url):
     try:
         browser, page = await ini_browser()
-        await asyncio.wait_for(page.goto(url, {'waitUntil': 'networkidle0'}), timeout=10.0)
+        await asyncio.wait_for(page.goto(url, {'waitUntil': 'domcontentloaded'}), timeout=10.0)
         await page._client.send("Page.stopLoading")
 
         await page.waitForSelector('.video-border')
