@@ -25,8 +25,8 @@ captionTemplateMd = '''标题: %s
 '''
 
 buttons = [
-    Button.url('11111', 'https://1111111111'),
-    Button.url('11111', 'https://111111111111'),
+    Button.url('11111', 'https://baidu.com'),
+    Button.url('11111', 'https://baidu.com'),
 ]
 
 REDIS_HOST = os.getenv('REDIS_HOST')
