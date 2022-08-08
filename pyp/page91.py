@@ -38,8 +38,12 @@ async def getVideoInfo91(url):
             }''')
         scCount = await page.Jeval('#useraction > div:nth-child(1) > span:nth-child(4) > span', 'el => el.innerText')
         title = await page.Jeval('#videodetails > h4', 'el => el.innerText')
-        author = await page.Jeval('#videodetails-content > div:nth-child(2) > span.title-yakov > a:nth-child(1) > span',
-                                  'el => el.innerText')
+        try:
+            author = await page.Jeval(
+                '#videodetails-content > div:nth-child(2) > span.title-yakov > a:nth-child(1) > span',
+                'el => el.innerText')
+        except ElementHandleError:
+            author = '匿名'
 
         # 判断是否高清
         length = await page.evaluate('''() => {
