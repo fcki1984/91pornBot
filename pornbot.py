@@ -222,9 +222,10 @@ async def page91DownIndex():
         url = urls[i]
         params = parse.parse_qs(parse.urlparse(url).query)
         viewkey = params['viewkey'][0]
-        videoinfo = await page91.getVideoInfo91(url)
-
+        
         try:
+            videoinfo = await page91.getVideoInfo91(url)
+
             # 下载视频
             await util.download91(videoinfo.realM3u8, viewkey)
         except:
