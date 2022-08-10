@@ -42,7 +42,7 @@ async def getVideoInfo91(url):
             author = await page.Jeval(
                 '#videodetails-content > div:nth-child(2) > span.title-yakov > a:nth-child(1) > span',
                 'el => el.innerText')
-        except ElementHandleError:
+        except:
             author = '匿名'
 
         # 判断是否高清
