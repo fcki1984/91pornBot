@@ -24,10 +24,7 @@ captionTemplate = '''标题: %s
 captionTemplateMd = '''标题: %s
 '''
 
-buttons = [
-    Button.url('11111', 'https://baidu.com'),
-    Button.url('11111', 'https://baidu.com'),
-]
+
 
 REDIS_HOST = os.getenv('REDIS_HOST')
 REDIS_PORT = int(os.getenv('REDIS_PORT'))
@@ -140,7 +137,7 @@ async def handleMd(event, viewkey, viewkey_url):
     # 截图
     await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
     msg = await event.reply(
-        '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接', buttons=buttons)
+        '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接')
 
     # 发送视频
     message = await event.client.send_file(event.chat_id,
@@ -168,7 +165,7 @@ async def handleHs(event, sender, text):
     await util.imgCover(videoInfo.imgUrl, viewkey + '/' + viewkey + '.jpg')
     segstr = await util.seg(videoInfo.title)
     msg = await event.reply(
-        '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接', buttons=buttons)
+        '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接')
     # 发送视频
     await event.client.send_file(event.chat_id,
                                  viewkey + '/' + viewkey + '.mp4',
@@ -196,7 +193,7 @@ async def handle91(event, viewkey, viewkey_url):
     await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
     segstr = await util.seg(title)
     msg = await event.reply(
-        '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接', buttons=buttons)
+        '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接')
     # 发送视频
     message = await event.client.send_file(event.chat_id,
 
@@ -243,7 +240,7 @@ async def page91DownIndex():
                                       thumb=viewkey + '/' + viewkey + '.jpg',
                                       caption=captionTemplate % (
                                           titles[i], scCounts[i], '#' + authors[i].strip(), segstr),
-                                      buttons=buttonsGg
+                                      
                                       )
         shutil.rmtree(viewkey)
         await saveToredis(viewkey, message.id, GROUP_ID)
