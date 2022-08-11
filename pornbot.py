@@ -24,8 +24,6 @@ captionTemplate = '''标题: %s
 captionTemplateMd = '''标题: %s
 '''
 
-
-
 REDIS_HOST = os.getenv('REDIS_HOST')
 REDIS_PORT = int(os.getenv('REDIS_PORT'))
 REDIS_PASS = os.getenv('REDIS_PASS')
@@ -77,54 +75,56 @@ async def send_welcome(event):
 ''')
 
 
-
-
 @bot.on(events.NewMessage)
 async def echo_all(event):
     text = event.text
     sender = await event.get_sender()
-    if 'viewkey' in text:  # 处理91的视频
 
-        if sender.username is None:
-            await event.client.send_message(event.chat_id, '请设置用户名后再发送链接')
-            return
-        print("消息来自:" + str(sender.username), ":", event.text)
-        params = parse.parse_qs(parse.urlparse(text).query)
-        viewkey = params['viewkey'][0]
-        viewkey_url = 'https://91porn.com/view_video.php?viewkey=' + viewkey
+    if event.is_private:
+        if 'viewkey' in text:  # 处理91的视频
 
-        # redis查询历史数据
-        mid, uid = await getFromredis(viewkey)
-        try:
-            await event.client.forward_messages(event.chat_id, mid, uid)
-            return
-        except:
-            print("消息已被删除或不存在，无法转发")
-        await handle91(event, viewkey, viewkey_url)
-    elif 'hsex.men/video-' in text:  # 补充,不向redis存了
-        sender = await event.get_sender()
-        if sender.username is None:
-            await event.client.send_message(event.chat_id, '请设置用户名后再发送链接')
-            return
-        await handleHs(event, sender, text)
-    elif '/vod/play/id' in text:
-        if sender.username is None:
-            await event.client.send_message(event.chat_id, '请设置用户名后再发送链接')
-            return
-        print("消息来自:" + str(sender.username), ":", event.text)
-        # 解析视频id
-        path = parse.urlparse(text).path
-        viewkey = 'md' + path.split('/')[5]
-        viewkey_url = text
+            if sender.username is None:
+                await event.client.send_message(event.chat_id, '请设置用户名后再发送链接')
+                return
+            print("消息来自:" + str(sender.username), ":", event.text)
+            params = parse.parse_qs(parse.urlparse(text).query)
+            viewkey = params['viewkey'][0]
+            viewkey_url = 'https://91porn.com/view_video.php?viewkey=' + viewkey
 
-        # redis查询历史数据
-        mid, uid = await getFromredis(viewkey)
-        try:
-            await event.client.forward_messages(event.chat_id, mid, uid)
-            return
-        except:
-            print("消息已被删除或不存在，无法转发")
-        await handleMd(event, viewkey, viewkey_url)
+            # redis查询历史数据
+            mid, uid = await getFromredis(viewkey)
+            try:
+                await event.client.forward_messages(event.chat_id, mid, uid)
+                return
+            except:
+                print("消息已被删除或不存在，无法转发")
+            await handle91(event, viewkey, viewkey_url)
+        elif 'hsex.men/video-' in text:  # 补充,不向redis存了
+            sender = await event.get_sender()
+            if sender.username is None:
+                await event.client.send_message(event.chat_id, '请设置用户名后再发送链接')
+                return
+            await handleHs(event, sender, text)
+        elif '/vod/play/id' in text:
+            if sender.username is None:
+                await event.client.send_message(event.chat_id, '请设置用户名后再发送链接')
+                return
+            print("消息来自:" + str(sender.username), ":", event.text)
+            # 解析视频id
+            path = parse.urlparse(text).path
+            viewkey = 'md' + path.split('/')[5]
+            viewkey_url = text
+
+            # redis查询历史数据
+            mid, uid = await getFromredis(viewkey)
+            try:
+                await event.client.forward_messages(event.chat_id, mid, uid)
+                return
+            except:
+                print("消息已被删除或不存在，无法转发")
+            await handleMd(event, viewkey, viewkey_url)
+    else:
+        print("None")
 
 
 async def handleMd(event, viewkey, viewkey_url):
@@ -219,7 +219,7 @@ async def page91DownIndex():
         url = urls[i]
         params = parse.parse_qs(parse.urlparse(url).query)
         viewkey = params['viewkey'][0]
-        
+
         try:
             videoinfo = await page91.getVideoInfo91(url)
 
@@ -240,11 +240,10 @@ async def page91DownIndex():
                                       thumb=viewkey + '/' + viewkey + '.jpg',
                                       caption=captionTemplate % (
                                           titles[i], scCounts[i], '#' + authors[i].strip(), segstr),
-                                      
+
                                       )
         shutil.rmtree(viewkey)
         await saveToredis(viewkey, message.id, GROUP_ID)
-
 
 
 async def main():
