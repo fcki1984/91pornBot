@@ -6,6 +6,7 @@ from urllib.parse import unquote
 import aiohttp
 from faker import Faker
 from pyppeteer import launch
+from pyppeteer.errors import ElementHandleError
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 fake = Faker('zh_CN')
@@ -42,7 +43,7 @@ async def getVideoInfo91(url):
             author = await page.Jeval(
                 '#videodetails-content > div:nth-child(2) > span.title-yakov > a:nth-child(1) > span',
                 'el => el.innerText')
-        except:
+        except ElementHandleError:
             author = '匿名'
 
         # 判断是否高清
