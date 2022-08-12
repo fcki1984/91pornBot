@@ -31,7 +31,8 @@ docker预装环境，方便更换服务，一键启动
 
 #### 安装 docker
 ```
-curl -fsSL get.docker.com -o get-docker.sh && sh get-docker.sh --mirror Aliyun&&systemctl enable docker&&systemctl start docker
+curl -fsSL get.docker.com -o get-docker.sh
+&&sh get-docker.sh &&systemctl enable docker&&systemctl start docker
 
 ```
 
