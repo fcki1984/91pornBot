@@ -129,86 +129,95 @@ async def echo_all(event):
 
 async def handleMd(event, viewkey, viewkey_url):
     # 获取视频信息
-    m3u8Url, title = await page91.getMaDou(viewkey_url)
-    msg1 = await event.client.send_message(event.chat_id,
-                                           '真实视频地址:' + m3u8Url + ' ,正在下载中... ,请不要一次性发送大量链接,被发现后会被封禁! ! !')
+    try:
+        m3u8Url, title = await page91.getMaDou(viewkey_url)
+        msg1 = await event.client.send_message(event.chat_id,
+                                               '真实视频地址:' + m3u8Url + ' ,正在下载中... ,请不要一次性发送大量链接,被发现后会被封禁! ! !')
 
-    await util.download91(m3u8Url, viewkey)
-    # 截图
-    await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
-    msg = await event.reply(
-        '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接')
+        await util.download91(m3u8Url, viewkey)
+        # 截图
+        await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
+        msg = await event.reply(
+            '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接')
 
-    # 发送视频
-    message = await event.client.send_file(event.chat_id,
+        # 发送视频
+        message = await event.client.send_file(event.chat_id,
 
-                                           viewkey + '/' + viewkey + '.mp4',
-                                           supports_streaming=True,
-                                           thumb=viewkey + '/' + viewkey + '.jpg',
-                                           caption=captionTemplateMd % (title),
-                                           reply_to=event.id,
-                                           )
-    await msg.delete()
-    await msg1.delete()
-    await saveToredis(viewkey, message.id, message.peer_id.user_id)
-    shutil.rmtree(viewkey)
-    print(str(datetime.datetime.now()) + ':' + title + ' 发送成功')
+                                               viewkey + '/' + viewkey + '.mp4',
+                                               supports_streaming=True,
+                                               thumb=viewkey + '/' + viewkey + '.jpg',
+                                               caption=captionTemplateMd % (title),
+                                               reply_to=event.id,
+                                               )
+        await msg.delete()
+        await msg1.delete()
+        await saveToredis(viewkey, message.id, message.peer_id.user_id)
+
+        print(str(datetime.datetime.now()) + ':' + title + ' 发送成功')
+    finally:
+        shutil.rmtree(viewkey, ignore_errors=True)
 
 
 async def handleHs(event, sender, text):
     p = parse.urlparse(text)
     viewkey = p.path.replace('/', '')
     print("消息来自:" + str(sender.username), ":", text)
-    videoInfo = await page91.getHs(text)
-    await util.download91(videoInfo.realM3u8, viewkey, 5)
-    # 截图
-    await util.imgCover(videoInfo.imgUrl, viewkey + '/' + viewkey + '.jpg')
-    segstr = await util.seg(videoInfo.title)
-    msg = await event.reply(
-        '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接')
-    # 发送视频
-    await event.client.send_file(event.chat_id,
-                                 viewkey + '/' + viewkey + '.mp4',
-                                 supports_streaming=True,
-                                 thumb=viewkey + '/' + viewkey + '.jpg',
-                                 caption=captionTemplate % (
-                                     videoInfo.title, '000', '#' + videoInfo.author, segstr),
-                                 reply_to=event.id,
-                                 )
-    await msg.delete()
-    shutil.rmtree(viewkey)
-    print(str(datetime.datetime.now()) + ':' + videoInfo.title + ' 发送成功')
+    try:
+        videoInfo = await page91.getHs(text)
+        await util.download91(videoInfo.realM3u8, viewkey, 5)
+        # 截图
+        await util.imgCover(videoInfo.imgUrl, viewkey + '/' + viewkey + '.jpg')
+        segstr = await util.seg(videoInfo.title)
+        msg = await event.reply(
+            '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接')
+        # 发送视频
+        await event.client.send_file(event.chat_id,
+                                     viewkey + '/' + viewkey + '.mp4',
+                                     supports_streaming=True,
+                                     thumb=viewkey + '/' + viewkey + '.jpg',
+                                     caption=captionTemplate % (
+                                         videoInfo.title, '000', '#' + videoInfo.author, segstr),
+                                     reply_to=event.id,
+                                     )
+        await msg.delete()
+
+        print(str(datetime.datetime.now()) + ':' + videoInfo.title + ' 发送成功')
+    finally:
+        shutil.rmtree(viewkey, ignore_errors=True)
 
 
 async def handle91(event, viewkey, viewkey_url):
-    videoinfo = await page91.getVideoInfo91(viewkey_url)
-    msg1 = await event.client.send_message(event.chat_id,
-                                           '真实视频地址:' + videoinfo.realM3u8 + ' ,正在下载中... ,请不要一次性发送大量链接,被发现后会被封禁! ! !')
-    title = videoinfo.title
-    if '.mp4' in videoinfo.realM3u8:
-        await  util.run(videoinfo.realM3u8, viewkey)
-    else:
-        await util.download91(videoinfo.realM3u8, viewkey)
-    # 截图
-    await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
-    segstr = await util.seg(title)
-    msg = await event.reply(
-        '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接')
-    # 发送视频
-    message = await event.client.send_file(event.chat_id,
+    try:
+        videoinfo = await page91.getVideoInfo91(viewkey_url)
+        msg1 = await event.client.send_message(event.chat_id,
+                                               '真实视频地址:' + videoinfo.realM3u8 + ' ,正在下载中... ,请不要一次性发送大量链接,被发现后会被封禁! ! !')
+        title = videoinfo.title
+        if '.mp4' in videoinfo.realM3u8:
+            await  util.run(videoinfo.realM3u8, viewkey)
+        else:
+            await util.download91(videoinfo.realM3u8, viewkey)
+        # 截图
+        await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
+        segstr = await util.seg(title)
+        msg = await event.reply(
+            '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接')
+        # 发送视频
+        message = await event.client.send_file(event.chat_id,
 
-                                           viewkey + '/' + viewkey + '.mp4',
-                                           supports_streaming=True,
-                                           thumb=viewkey + '/' + viewkey + '.jpg',
-                                           caption=captionTemplate % (
-                                               title, videoinfo.scCount, '#' + videoinfo.author, segstr),
-                                           reply_to=event.id,
-                                           )
-    await msg.delete()
-    await msg1.delete()
-    await saveToredis(viewkey, message.id, message.peer_id.user_id)
-    shutil.rmtree(viewkey)
-    print(str(datetime.datetime.now()) + ':' + title + ' 发送成功')
+                                               viewkey + '/' + viewkey + '.mp4',
+                                               supports_streaming=True,
+                                               thumb=viewkey + '/' + viewkey + '.jpg',
+                                               caption=captionTemplate % (
+                                                   title, videoinfo.scCount, '#' + videoinfo.author, segstr),
+                                               reply_to=event.id,
+                                               )
+        await msg.delete()
+        await msg1.delete()
+        await saveToredis(viewkey, message.id, message.peer_id.user_id)
+
+        print(str(datetime.datetime.now()) + ':' + title + ' 发送成功')
+    finally:
+        shutil.rmtree(viewkey, ignore_errors=True)
 
 
 # 首页视频下载发送
@@ -227,6 +236,7 @@ async def page91DownIndex():
             await util.download91(videoinfo.realM3u8, viewkey)
         except:
             print('转码失败')
+            shutil.rmtree(viewkey, ignore_errors=True)
             continue
 
         # 截图
@@ -242,7 +252,7 @@ async def page91DownIndex():
                                           titles[i], scCounts[i], '#' + authors[i].strip(), segstr),
 
                                       )
-        shutil.rmtree(viewkey)
+        shutil.rmtree(viewkey, ignore_errors=True)
         await saveToredis(viewkey, message.id, GROUP_ID)
 
 
