@@ -81,7 +81,6 @@ async def genIpaddr():
 @retry(stop=stop_after_attempt(5), wait=wait_fixed(2))
 async def run(url, viewkey, sem=asyncio.Semaphore(500)):
     if '.mp4' in url:
-        os.makedirs(viewkey)
         filename = viewkey + '.mp4'
     else:
         filename = re.search('([a-zA-Z0-9-_]+.ts)', url).group(1).strip()
