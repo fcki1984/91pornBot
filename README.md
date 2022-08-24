@@ -110,3 +110,11 @@ python pornbot.py
 
  ![image](https://user-images.githubusercontent.com/48782751/159890884-d65a2528-e7fc-4be3-a981-fa7608072467.png)
 
+### 服务部署注意
+
+telegram会根据手机号绑定的dc来选择上传点，亚洲手机号一般会在telegram的dc5(新加坡)，美国手机号建议选择美国的vps来挂bot
+
+https://www.dmit.io/aff.php?aff=4782
+
+
+
