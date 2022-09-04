@@ -8,5 +8,5 @@ tenacity
 jieba
 APScheduler
 ffmpy3
-aiohttp
+aiohttp[speedups]
 uvloop
