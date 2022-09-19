@@ -82,8 +82,6 @@ async def echo_all(event):
 
     if event.is_private:
         if 'viewkey' in text:  # 处理91的视频
-
-            print("消息来自:" + str(sender.username), ":", event.text)
             params = parse.parse_qs(parse.urlparse(text).query)
             viewkey = params['viewkey'][0]
             viewkey_url = 'https://91porn.com/view_video.php?viewkey=' + viewkey
@@ -100,7 +98,6 @@ async def echo_all(event):
             sender = await event.get_sender()
             await handleHs(event, sender, text)
         elif '/vod/play/id' in text:
-
             # 解析视频id
             path = parse.urlparse(text).path
             viewkey = 'md' + path.split('/')[5]
