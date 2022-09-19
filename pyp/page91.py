@@ -2,7 +2,10 @@ import asyncio
 import re
 from urllib import parse
 from urllib.parse import unquote
+# 开头加入如下代码，告诉此进程，遇到SIGCLD信号时，用SIG_IGN方法处理
+import signal
 
+signal.signal(signal.SIGCLD, signal.SIG_IGN)
 import aiohttp
 from faker import Faker
 from pyppeteer import launch

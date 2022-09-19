@@ -9,5 +9,6 @@ RUN pip3 --no-cache-dir install --user -r /app/requirements.txt
 ADD https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_x86_64 /usr/local/bin/dumb-init
 RUN chmod +x /usr/local/bin/dumb-init
 WORKDIR /app
+ENTRYPOINT ["/usr/local/bin/dumb-init", "--"]
 # -u print打印出来
 CMD ["/bin/bash", "-c", "set -e && python3 -u pornbot.py"]
