@@ -83,9 +83,6 @@ async def echo_all(event):
     if event.is_private:
         if 'viewkey' in text:  # 处理91的视频
 
-            if sender.username is None:
-                await event.client.send_message(event.chat_id, '请设置用户名后再发送链接')
-                return
             print("消息来自:" + str(sender.username), ":", event.text)
             params = parse.parse_qs(parse.urlparse(text).query)
             viewkey = params['viewkey'][0]
@@ -101,15 +98,9 @@ async def echo_all(event):
             await handle91(event, viewkey, viewkey_url)
         elif 'hsex.men/video-' in text:  # 补充,不向redis存了
             sender = await event.get_sender()
-            if sender.username is None:
-                await event.client.send_message(event.chat_id, '请设置用户名后再发送链接')
-                return
             await handleHs(event, sender, text)
         elif '/vod/play/id' in text:
-            if sender.username is None:
-                await event.client.send_message(event.chat_id, '请设置用户名后再发送链接')
-                return
-            print("消息来自:" + str(sender.username), ":", event.text)
+
             # 解析视频id
             path = parse.urlparse(text).path
             viewkey = 'md' + path.split('/')[5]
