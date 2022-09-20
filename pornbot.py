@@ -183,7 +183,12 @@ async def handle91(event, viewkey, viewkey_url):
         if '.mp4' in videoinfo.realM3u8:
             await  util.run(videoinfo.realM3u8, viewkey)
         else:
-            await util.download91(videoinfo.realM3u8, viewkey)
+            try:
+                await util.download91(videoinfo.realM3u8, viewkey)
+            except ValueError:
+                await event.reply(
+                    '该视频高清版转码未完成,请等待转码完成后再发送链接,转码完成一般在视频发布1小时后')
+                return
         # 截图
         await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
         segstr = await util.seg(title)
