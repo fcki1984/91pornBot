@@ -77,13 +77,7 @@ docker-compose up -d #后台运行
 docker compose up 
 docker compose up -d #后台运行
 ```
-部分报错会导致浏览器未关闭，暂不清楚原因，所以写了定时重启docker的脚本
 
-crontab -e
-添加如下内容，设置每天4点重启
-```
-0 4 * * * /pybot/restart.sh
-```
 
 
 
