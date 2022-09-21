@@ -192,12 +192,18 @@ async def handle91(event, viewkey, viewkey_url):
         # 截图
         await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
         segstr = await util.seg(title)
+
+        # 判断是否需要截取25秒的广告
+        is_seg = '付费' in title
+        if is_seg:
+            await util.segVideo(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + 'seg_' + viewkey + '.mp4')
+
+
         msg = await event.reply(
             '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接')
         # 发送视频
         message = await event.client.send_file(event.chat_id,
-
-                                               viewkey + '/' + viewkey + '.mp4',
+                                               viewkey + '/' + 'seg_' + viewkey + '.mp4' if is_seg else viewkey + '/' + viewkey + '.mp4',
                                                supports_streaming=True,
                                                thumb=viewkey + '/' + viewkey + '.jpg',
                                                caption=captionTemplate % (
@@ -236,9 +242,12 @@ async def page91DownIndex():
         await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
         segstr = await util.seg(titles[i])
         # 发送视频
+        is_seg = '付费' in titles[i]
+        if is_seg:
+            await util.segVideo(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + 'seg_' + viewkey + '.mp4')
 
         message = await bot.send_file(GROUP_ID,
-                                      viewkey + '/' + viewkey + '.mp4',
+                                      viewkey + '/' + 'seg_' + viewkey + '.mp4' if is_seg else viewkey + '/' + viewkey + '.mp4',
                                       supports_streaming=True,
                                       thumb=viewkey + '/' + viewkey + '.jpg',
                                       caption=captionTemplate % (

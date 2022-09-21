@@ -39,6 +39,18 @@ async def imgCover(input, output):
     await ff.wait()
 
 
+# 截取视频
+async def segVideo(input, output, seconds='24'):
+    ff = ffmpy3.FFmpeg(
+        inputs={input: None},
+        outputs={output: ['-y', '-ss', seconds, '-c', 'copy',
+                          '-loglevel', 'quiet'
+                          ]}
+    )
+    await ff.run_async()
+    await ff.wait()
+
+
 # 检查字符串出现次数
 def checkStrCount(str_source, str_check):  # str_source：源字符串；str_check：要检查字符
     splits = str_source.split(str_check)  # 返回拆分数组
