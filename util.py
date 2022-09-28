@@ -40,12 +40,16 @@ async def imgCover(input, output):
 
 
 # 截取视频
-async def segVideo(input, output, seconds='24'):
+async def segVideo(input, output, start='25', end=''):
+    quiet_ = ['-y', '-ss', start, '-c', 'copy',
+              '-loglevel', 'quiet'
+              ]
+    if end != '':
+        quiet_.append('-t')
+        quiet_.append(end)
     ff = ffmpy3.FFmpeg(
         inputs={input: None},
-        outputs={output: ['-y', '-ss', seconds, '-c', 'copy',
-                          '-loglevel', 'quiet'
-                          ]}
+        outputs={output: quiet_}
     )
     await ff.run_async()
     await ff.wait()

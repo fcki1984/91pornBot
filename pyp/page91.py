@@ -20,7 +20,7 @@ class VideoInfo(object):
     pass
 
 
-@retry(stop=stop_after_attempt(3), wait=wait_fixed(10))
+
 async def getVideoInfo91(url):
     try:
         browser, page = await ini_browser()
