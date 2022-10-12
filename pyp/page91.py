@@ -155,7 +155,7 @@ async def get91Home():
     """
     async with aiohttp.ClientSession() as session:
         async with session.get('https://www.ebay.com/usr/91home') as r:
-            return re.findall(r'<h2 class="bio inline_value">\s\s\s\s(.*?)\s\s', await r.text())[0]
+            return re.findall(r'regular-text">(.*?)</span>', await r.text())[0]
 
 
 async def getMaDou(url):
