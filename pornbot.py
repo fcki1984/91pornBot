@@ -177,7 +177,7 @@ async def cut_video91(is_seg, viewkey):
     if is_seg:
         # 获取视频时长
         duration = util.getVideoDuration(viewkey + '/' + viewkey + '.mp4')
-        endPoint = duration - 15 - 24
+        endPoint = duration - 15 - 25
         await util.segVideo(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + 'seg_' + viewkey + '.mp4',
                             end=str(endPoint))
 
@@ -201,15 +201,20 @@ async def handle91(event, viewkey, viewkey_url):
         await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
         segstr = await util.seg(title)
 
-        is_seg = '付费' in titles[i]
-        await cut_video91(is_seg, viewkey)
+
+        # is_seg = '付费' in titles[i]
+        # await cut_video91(is_seg, viewkey)
+
+        # 去除前12秒
+        await util.segVideo(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + 'seg_' + viewkey + '.mp4', start='14')
 
 
         msg = await event.reply(
             '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接')
         # 发送视频
         message = await event.client.send_file(event.chat_id,
-                                               viewkey + '/' + 'seg_' + viewkey + '.mp4' if is_seg else viewkey + '/' + viewkey + '.mp4',
+                                      # viewkey + '/' + 'seg_' + viewkey + '.mp4' if is_seg else viewkey + '/' + viewkey + '.mp4',
+                                      viewkey + '/' + 'seg_' + viewkey + '.mp4',
                                                supports_streaming=True,
                                                thumb=viewkey + '/' + viewkey + '.jpg',
                                                caption=captionTemplate % (
@@ -248,11 +253,15 @@ async def page91DownIndex():
         await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
         segstr = await util.seg(titles[i])
         # 发送视频
-        is_seg = '付费' in titles[i]
-        await cut_video91(is_seg, viewkey)
+        # is_seg = '付费' in titles[i]
+        # await cut_video91(is_seg, viewkey)
+
+        # 去除前12秒
+        await util.segVideo(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + 'seg_' + viewkey + '.mp4', start='14')
 
         message = await bot.send_file(GROUP_ID,
-                                      viewkey + '/' + 'seg_' + viewkey + '.mp4' if is_seg else viewkey + '/' + viewkey + '.mp4',
+                                      # viewkey + '/' + 'seg_' + viewkey + '.mp4' if is_seg else viewkey + '/' + viewkey + '.mp4',
+                                      viewkey + '/' + 'seg_' + viewkey + '.mp4',
                                       supports_streaming=True,
                                       thumb=viewkey + '/' + viewkey + '.jpg',
                                       caption=captionTemplate % (
