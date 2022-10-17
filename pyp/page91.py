@@ -24,7 +24,7 @@ class VideoInfo(object):
 async def getVideoInfo91(url):
     try:
         browser, page = await ini_browser()
-        await asyncio.wait_for(page.goto(url, {'waitUntil': 'domcontentloaded'}), timeout=10.0)
+        await page.goto(url, {'waitUntil': 'domcontentloaded', 'timeout': 0})
         await page._client.send("Page.stopLoading")
 
         await page.waitForSelector('.video-border')
@@ -106,8 +106,8 @@ async def ini_browser():
 async def page91Index():
     try:
         browser, page = await ini_browser()
-        await asyncio.wait_for(page.goto('https://91porn.com/index.php', {'waitUntil': 'domcontentloaded'}),
-                               timeout=30.0)
+        await page.goto('https://91porn.com/index.php', {'waitUntil': 'domcontentloaded', 'timeout': 0})
+                               
         # await page._client.send("Page.stopLoading")
         await page.waitForSelector('#wrapper > div.container.container-minheight > div.row > div > div > a')
         urls = await page.querySelectorAllEval(
