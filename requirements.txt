@@ -1,5 +1,4 @@
 Faker
-pyppeteer
 telethon
 cryptg
 redis

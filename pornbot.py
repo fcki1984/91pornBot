@@ -1,5 +1,8 @@
 import asyncio
+
 import uvloop
+
+from pyp.play import getMaDou, getHs, getVideoInfo91, page91Index, get91Home
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 import datetime
@@ -10,11 +13,10 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 import redis
 # import socks
-from telethon import TelegramClient, events, Button
+from telethon import TelegramClient, events
 from urllib import parse
 
 import util
-from pyp import page91
 
 captionTemplate = '''标题: %s
 收藏: %s
@@ -53,12 +55,12 @@ async def getFromredis(key):
 
 @bot.on(events.NewMessage(pattern='/start'))
 async def send_welcome(event):
-    await event.client.send_message(event.chat_id, '向我发送91视频链接，获取视频,有问题请留言 @bzhzq')
+    await event.client.send_message(event.chat_id, '向我发送91视频链接，获取视频,有问题请留言 ')
 
 
 @bot.on(events.NewMessage(pattern='/get91home'))
 async def send_welcome(event):
-    await event.client.send_message(event.chat_id, '免翻地址: ' + await page91.get91Home())
+    await event.client.send_message(event.chat_id, '免翻地址: ' + await get91Home())
 
 
 @bot.on(events.NewMessage(pattern='/help'))
@@ -118,7 +120,7 @@ async def echo_all(event):
 async def handleMd(event, viewkey, viewkey_url):
     # 获取视频信息
     try:
-        m3u8Url, title = await page91.getMaDou(viewkey_url)
+        m3u8Url, title = await getMaDou(viewkey_url)
         msg1 = await event.client.send_message(event.chat_id,
                                                '真实视频地址:' + m3u8Url + ' ,正在下载中... ,请不要一次性发送大量链接,被发现后会被封禁! ! !')
 
@@ -151,7 +153,7 @@ async def handleHs(event, sender, text):
     viewkey = p.path.replace('/', '')
     print("消息来自:" + str(sender.username), ":", text)
     try:
-        videoInfo = await page91.getHs(text)
+        videoInfo = await getHs(text)
         await util.download91(videoInfo.realM3u8, viewkey, 5)
         # 截图
         await util.imgCover(videoInfo.imgUrl, viewkey + '/' + viewkey + '.jpg')
@@ -173,48 +175,47 @@ async def handleHs(event, sender, text):
     finally:
         shutil.rmtree(viewkey, ignore_errors=True)
 
-async def cut_video91(is_seg, viewkey):
-    if is_seg:
-        # 获取视频时长
-        duration = util.getVideoDuration(viewkey + '/' + viewkey + '.mp4')
-        endPoint = duration - 15 - 25
-        await util.segVideo(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + 'seg_' + viewkey + '.mp4',
-                            end=str(endPoint))
+
+
 
 
 async def handle91(event, viewkey, viewkey_url):
     try:
-        videoinfo = await page91.getVideoInfo91(viewkey_url)
+        videoinfo, err_msg = await getVideoInfo91(viewkey_url)
+
+        if err_msg is not None:
+            await event.reply(
+                err_msg)
+
         msg1 = await event.client.send_message(event.chat_id,
                                                '真实视频地址:' + videoinfo.realM3u8 + ' ,正在下载中... ,请不要一次性发送大量链接,被发现后会被封禁! ! !')
         title = videoinfo.title
+        if not os.path.exists(viewkey):
+            os.makedirs(viewkey)
+
         if '.mp4' in videoinfo.realM3u8:
             await  util.run(videoinfo.realM3u8, viewkey)
         else:
+
             try:
                 await util.download91(videoinfo.realM3u8, viewkey)
             except ValueError:
                 await event.reply(
                     '该视频高清版转码未完成,请等待转码完成后再发送链接,转码完成一般在视频发布1小时后')
                 return
+
         # 截图
         await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
         segstr = await util.seg(title)
 
 
-        # is_seg = '付费' in titles[i]
-        # await cut_video91(is_seg, viewkey)
-
-        # 去除前12秒
         await util.segVideo(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + 'seg_' + viewkey + '.mp4', start='14')
-
-
         msg = await event.reply(
             '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接')
         # 发送视频
         message = await event.client.send_file(event.chat_id,
-                                      # viewkey + '/' + 'seg_' + viewkey + '.mp4' if is_seg else viewkey + '/' + viewkey + '.mp4',
-                                      viewkey + '/' + 'seg_' + viewkey + '.mp4',
+                                               # viewkey + '/' + 'seg_' + viewkey + '.mp4' if is_seg else viewkey + '/' + viewkey + '.mp4',
+                                               viewkey + '/' + 'seg_' + viewkey + '.mp4',
                                                supports_streaming=True,
                                                thumb=viewkey + '/' + viewkey + '.jpg',
                                                caption=captionTemplate % (
@@ -223,8 +224,8 @@ async def handle91(event, viewkey, viewkey_url):
                                                )
         await msg.delete()
         await msg1.delete()
-        await saveToredis(viewkey, message.id, message.peer_id.user_id)
 
+        await saveToredis(viewkey, message.id, message.peer_id.user_id)
         print(str(datetime.datetime.now()) + ':' + title + ' 发送成功')
     finally:
         shutil.rmtree(viewkey, ignore_errors=True)
@@ -232,7 +233,7 @@ async def handle91(event, viewkey, viewkey_url):
 
 # 首页视频下载发送
 async def page91DownIndex():
-    urls, titles, authors, scCounts = await page91.page91Index()
+    urls, titles, authors, scCounts = await page91Index()
     # print(urls)
     for i in range(len(urls)):
         url = urls[i]
@@ -240,8 +241,9 @@ async def page91DownIndex():
         viewkey = params['viewkey'][0]
 
         try:
-            videoinfo = await page91.getVideoInfo91(url)
-
+            videoinfo, err_msg = await getVideoInfo91(url)
+            if err_msg is not None:
+                continue
             # 下载视频
             await util.download91(videoinfo.realM3u8, viewkey)
         except:
@@ -253,8 +255,6 @@ async def page91DownIndex():
         await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
         segstr = await util.seg(titles[i])
         # 发送视频
-        # is_seg = '付费' in titles[i]
-        # await cut_video91(is_seg, viewkey)
 
         # 去除前12秒
         await util.segVideo(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + 'seg_' + viewkey + '.mp4', start='14')

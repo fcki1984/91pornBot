@@ -97,8 +97,12 @@ async def genIpaddr():
 # 下载任务
 @retry(stop=stop_after_attempt(5), wait=wait_fixed(2))
 async def run(url, viewkey, sem=asyncio.Semaphore(500)):
-    if '.mp4' in url:
+    if url.endswith('.mp4'):
         filename = viewkey + '.mp4'
+    elif url.endswith('.jpg'):
+        filename = re.search('([a-zA-Z0-9-_]+.jpg)', url).group(1).strip()
+        filename = filename.removesuffix('.jpg')
+        filename = filename + '.ts'
     else:
         filename = re.search('([a-zA-Z0-9-_]+.ts)', url).group(1).strip()
     # connector = aiohttp.TCPConnector(limit_per_host=1)
@@ -115,6 +119,9 @@ async def run(url, viewkey, sem=asyncio.Semaphore(500)):
                         if not chunk:
                             break
                         fp.write(chunk)
+                    if url.endswith('.jpg'):
+                            fp.seek(0x00)
+                            fp.write(b'\xff\xff\xff\xff')
                     print("\r", '任务文件 ', filename, ' 下载成功', end="", flush=True)
 
     # print("\r", '任务文件 ', filename, ' 下载成功', end="", flush=True)
@@ -148,7 +155,15 @@ async def down(url, viewkey):
                 print('跳过')
                 continue
 
-            if '.ts' in line:
+            if '.ts' in line or '.jpg' in line:
+                if '.jpg' in line:
+                    ts_list.append(line)
+                    filename = re.search('([a-zA-Z0-9-_]+.jpg)', line).group(1).strip()
+                    filename = filename.removesuffix('.jpg')
+                    filename = filename + '.ts'
+                    t.write("file %s\n" % filename)
+                    print("\r", '文件写入中', i, "/", s - 3, end="", flush=True)
+                    continue
                 if 'http' in line:
                     # print("ts>>", line)
                     ts_list.append(line)
