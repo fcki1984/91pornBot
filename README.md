@@ -1,8 +1,7 @@
 # pornbot91_py
 91 | 好色 | 麻豆 视频下载，发送电报
 
-
- [English](./README_en.md) 
+ [English](./README_en.md)  |  [历史更新日志](./his.md) 
 
 ###  特点
 
