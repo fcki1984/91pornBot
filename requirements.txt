@@ -9,3 +9,4 @@ APScheduler
 ffmpy3
 aiohttp[speedups]
 uvloop
+playwright
