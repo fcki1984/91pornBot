@@ -186,7 +186,7 @@ async def handle91(event, viewkey, viewkey_url):
         if err_msg is not None:
             await event.reply(
                 err_msg)
-
+            return
         msg1 = await event.client.send_message(event.chat_id,
                                                '真实视频地址:' + videoinfo.realM3u8 + ' ,正在下载中... ,请不要一次性发送大量链接,被发现后会被封禁! ! !')
         title = videoinfo.title
