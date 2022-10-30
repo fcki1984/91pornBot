@@ -7,6 +7,9 @@ on:   # 配置触发workflow的事件
       - 'mas'
     tags:       # tag更新时触发此workflow
       - '*'
+    paths-ignore:   # 下列文件的变更不触发部署，可以自行添加
+      - README.md
+      - his.md      
   workflow_dispatch:
           inputs:
               name:
