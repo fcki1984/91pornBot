@@ -33,6 +33,10 @@ API_ID = int(os.getenv('API_ID'))
 API_HASH = os.getenv('API_HASH')
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 GROUP_ID = int(os.getenv('GROUP_ID'))
+cron_hour_91 = int(os.getenv('CRON_HOUR_91', '6'))
+cron_minute_91 = int(os.getenv('CRON_MINUTE_91', '50'))
+
+
 bot = TelegramClient(None, API_ID, API_HASH,
                      # proxy=(socks.HTTP, '127.0.0.1', 10809)
                      ).start(
@@ -274,7 +278,7 @@ async def page91DownIndex():
 
 async def main():
     scheduler = AsyncIOScheduler(timezone='Asia/Shanghai')
-    scheduler.add_job(page91DownIndex, 'cron', hour=6, minute=50)
+    scheduler.add_job(page91DownIndex, 'cron', hour=cron_hour_91, minute=cron_minute_91)
     scheduler.start()
     print('bot启动了!!!')
 
