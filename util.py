@@ -56,7 +56,6 @@ async def segVideo(input, output, start='25', end=''):
     await ff.wait()
 
 
-
 def getVideoDuration(input):
     cap = cv2.VideoCapture(input)
     if cap.isOpened():
@@ -95,7 +94,6 @@ async def m3u8ToMp4(input, output):
     await ff.wait()
 
 
-# asyncio.get_event_loop().run_until_complete(m3u8ToMp4('https://vod1.ttbfp2.com/20220611/j0OGqP1T/index.m3u8', 'test/tes.mp4'))
 
 async def genIpaddr():
     m = random.randint(0, 255)
@@ -107,33 +105,32 @@ async def genIpaddr():
 
 # 下载任务
 @retry(stop=stop_after_attempt(5), wait=wait_fixed(2))
-async def run(url, viewkey, sem=asyncio.Semaphore(500)):
-    if url.endswith('.mp4'):
-        filename = viewkey + '.mp4'
-    elif url.endswith('.jpg'):
-        filename = re.search('([a-zA-Z0-9-_]+.jpg)', url).group(1).strip()
-        filename = filename.removesuffix('.jpg')
-        filename = filename + '.ts'
-    else:
-        filename = re.search('([a-zA-Z0-9-_]+.ts)', url).group(1).strip()
-    # connector = aiohttp.TCPConnector(limit_per_host=1)
+async def run(session, url, viewkey, sem=asyncio.Semaphore(500)):
     async with sem:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as r:
-                # print('下载：',url)
-                if (r.status == 503):
-                    print('下载失败,抛出重试')
-                    raise RuntimeError('抛出重试')
-                with open(viewkey + '/' + filename, "wb") as fp:
-                    while True:
-                        chunk = await r.content.read(64 * 1024)
-                        if not chunk:
-                            break
-                        fp.write(chunk)
-                    if url.endswith('.jpg'):
-                            fp.seek(0x00)
-                            fp.write(b'\xff\xff\xff\xff')
-                    print("\r", '任务文件 ', filename, ' 下载成功', end="", flush=True)
+        if url.endswith('.mp4'):
+            filename = viewkey + '.mp4'
+        elif url.endswith('.jpg'):
+            filename = re.search('([a-zA-Z0-9-_]+.jpg)', url).group(1).strip()
+            filename = filename.removesuffix('.jpg')
+            filename = filename + '.ts'
+        else:
+            filename = re.search('([a-zA-Z0-9-_]+.ts)', url).group(1).strip()
+
+        async with session.get(url) as r:
+            # print('下载：',url)
+            if (r.status == 503):
+                print('下载失败,抛出重试')
+                raise RuntimeError('抛出重试')
+            with open(viewkey + '/' + filename, "wb") as fp:
+                while True:
+                    chunk = await r.content.read(64 * 1024)
+                    if not chunk:
+                        break
+                    fp.write(chunk)
+                if url.endswith('.jpg'):
+                    fp.seek(0x00)
+                    fp.write(b'\xff\xff\xff\xff')
+                print("\r", '任务文件 ', filename, ' 下载成功', end="", flush=True)
 
     # print("\r", '任务文件 ', filename, ' 下载成功', end="", flush=True)
 
@@ -208,12 +205,12 @@ async def download91(url, viewkey, max=200):
     asyncio.set_event_loop(loop)
     tasks = []
     sem = asyncio.Semaphore(max)  # 控制并发数
-    for url in ts_list:
-        task = asyncio.create_task(run(url, viewkey, sem))
-        tasks.append(task)
+    async with aiohttp.ClientSession() as session:
+        for url in ts_list:
+            task = asyncio.create_task(run(session, url, viewkey, sem))
+            tasks.append(task)
 
-    await asyncio.wait(tasks)
+        await asyncio.wait(tasks)
     merge(concatfile, viewkey)
     end = datetime.datetime.now().replace(microsecond=0)
     print('写文件及下载耗时：' + str(end - start))
-
