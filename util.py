@@ -6,7 +6,7 @@ import random
 import re
 import shutil
 from urllib import parse
-
+import cv2
 import aiohttp
 import ffmpy3
 import jieba
@@ -41,7 +41,7 @@ async def imgCover(input, output):
 
 # 截取视频
 async def segVideo(input, output, start='25', end=''):
-    quiet_ = ['-y', '-c:v', 'copy', '-c:a', 'copy',
+    quiet_ = ['-y', '-c:v', 'copy', '-c:a', 'copy', '-avoid_negative_ts', '1',
               '-loglevel', 'quiet'
               ]
     if end != '':
@@ -54,6 +54,17 @@ async def segVideo(input, output, start='25', end=''):
     print(ff.cmd)
     await ff.run_async()
     await ff.wait()
+
+
+
+def getVideoDuration(input):
+    cap = cv2.VideoCapture(input)
+    if cap.isOpened():
+        rate = cap.get(5)
+        frame_num = cap.get(7)
+        duration = frame_num / rate
+        return int(duration)
+    return -1
 
 
 # 检查字符串出现次数

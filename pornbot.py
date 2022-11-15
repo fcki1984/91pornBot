@@ -213,7 +213,7 @@ async def handle91(event, viewkey, viewkey_url):
         segstr = await util.seg(title)
 
 
-        await util.segVideo(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + 'seg_' + viewkey + '.mp4', start='14')
+        await cut_video91(viewkey)
         msg = await event.reply(
             '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接')
         # 发送视频
@@ -233,6 +233,13 @@ async def handle91(event, viewkey, viewkey_url):
         print(str(datetime.datetime.now()) + ':' + title + ' 发送成功')
     finally:
         shutil.rmtree(viewkey, ignore_errors=True)
+
+
+async def cut_video91(viewkey):
+    # 获取视频时长
+    duration = util.getVideoDuration(viewkey + '/' + viewkey + '.mp4')
+    await util.segVideo(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + 'seg_' + viewkey + '.mp4',
+                        start='0' if duration < 2 * 60 else '10')
 
 
 # 首页视频下载发送
@@ -260,8 +267,7 @@ async def page91DownIndex():
         segstr = await util.seg(titles[i])
         # 发送视频
 
-        # 去除前12秒
-        await util.segVideo(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + 'seg_' + viewkey + '.mp4', start='14')
+        await cut_video91(viewkey)
 
         message = await bot.send_file(GROUP_ID,
                                       # viewkey + '/' + 'seg_' + viewkey + '.mp4' if is_seg else viewkey + '/' + viewkey + '.mp4',

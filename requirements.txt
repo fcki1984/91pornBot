@@ -10,3 +10,4 @@ ffmpy3
 aiohttp[speedups]
 uvloop
 playwright
+opencv-python
