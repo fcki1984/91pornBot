@@ -83,7 +83,7 @@ async def getVideoInfo91(url):
 
         # 判断是否高清
         length = await page.evaluate('''() => {
-               return $("#videodetails-content > a:nth-child(2)").length
+               return $("#videodetails-content > img").length
             }''')
         if int(length) > 0:
             if '.mp4' in real_m3u8:
