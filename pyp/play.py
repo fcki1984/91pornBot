@@ -40,6 +40,7 @@ async def init_browser(is_pc=True):
         }
     )
     page = await context.new_page()
+    await context.route(re.compile(r"(\.png$)|(\.jpg$)"), lambda route: route.abort())
     js = """
                     Object.defineProperties(navigator, {webdriver:{get:()=>undefined}});
                     """
