@@ -1,5 +1,5 @@
 # pornbot91_py
-91 | 好色 | 麻豆| cableav.tv 视频下载，发送电报
+91 | 好色 | 麻豆| cableav.tv | xvideos.com 视频下载，发送电报
 
  [English](./README_en.md)  |  [历史更新日志](./his.md) | [docker镜像](https://hub.docker.com/repository/docker/jwstar/pybot)
 
