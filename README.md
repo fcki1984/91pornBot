@@ -76,7 +76,10 @@ tzselect
 ```
 cp /usr/share/zoneinfo/Asia/Shanghai  /etc/localtime
 ```
-
+查看时间
+```
+date
+```
 
 ### 启动项目
 
