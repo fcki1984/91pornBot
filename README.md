@@ -67,6 +67,17 @@ mkdir /pybot
       GROUP_ID: 121231311
 ```
 
+### 设置时区
+
+```
+tzselect
+```
+
+```
+cp /usr/share/zoneinfo/Asia/Shanghai  /etc/localtime
+```
+
+
 ### 启动项目
 
 ```yaml
