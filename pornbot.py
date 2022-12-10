@@ -64,7 +64,7 @@ async def send_welcome(event):
 
 @bot.on(events.NewMessage(pattern='/get91home'))
 async def send_welcome(event):
-    await event.client.send_message(event.chat_id, '免翻地址: ' + await get91Home())
+    await event.client.send_message(event.chat_id, f'免翻地址: {await get91Home()}')
 
 
 @bot.on(events.NewMessage(pattern='/help'))
