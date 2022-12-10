@@ -168,10 +168,8 @@ async def genIpaddr():
 
 
 async def get91Home():
-    """
-        获取91免翻墙地址
-    :return:
-    """
-    async with aiohttp.ClientSession() as session:
-        async with session.get('https://www.ebay.com/usr/91home') as r:
-            return re.findall(r'regular-text">(.*?)</span>', await r.text())[0]
+    context, page = await init_browser()
+    await page.goto('https://www.ebay.com/usr/91home', wait_until="domcontentloaded")
+    return await page.evaluate('''() => {
+           return $("section.str-about-description__about-intro > div > span").text();
+        }''')
