@@ -160,7 +160,8 @@ async def handleHs(event, sender, text):
         videoInfo = await getHs(text)
         await util.download91(videoInfo.realM3u8, viewkey, 5)
         # 截图
-        await util.imgCover(videoInfo.imgUrl, viewkey + '/' + viewkey + '.jpg')
+#         await util.imgCover(videoInfo.imgUrl, viewkey + '/' + viewkey + '.jpg')
+        await util.imgCoverFromFile(viewkey + '/' + viewkey + '.mp4', viewkey + '/' + viewkey + '.jpg')
         segstr = await util.seg(videoInfo.title)
         msg = await event.reply(
             '视频下载完成，正在上传。。。如果长时间没收到视频，请重新发送链接')
