@@ -121,6 +121,5 @@ python pornbot.py
 
 telegram会根据手机号绑定的dc来选择上传点，亚洲手机号一般会在telegram的dc5(新加坡)，美国手机号建议选择美国的vps来挂bot
 
-推荐服务器(选lite版即可)：https://www.dmit.io/aff.php?aff=4782
-
+推荐服务器(选最低配即可)：https://www.vultr.com/?ref=9334216-8H
 
