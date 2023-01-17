@@ -39,7 +39,7 @@ async def seg(str):
     for w in seg_list:
         if w not in stopword_list:
             res_list.append('#' + w)
-    return " ".join(seg_list)
+    return " ".join(res_list)
 
 
 @retry(stop=stop_after_attempt(4), wait=wait_fixed(10))
