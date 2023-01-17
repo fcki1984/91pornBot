@@ -18,14 +18,27 @@ headers = None
 jieba.setLogLevel(logging.ERROR)
 
 
+# 读取停用词列表
+def get_stopword_list(file):
+    with open(file, 'r', encoding='utf-8') as f:  #
+        stopword_list = [word.strip('\n') for word in f.readlines()]
+    return stopword_list
+
 async def seg(str):
+    stopword_list=[]
     try:
         jieba.load_userdict("/config/word.txt")
-        jieba.set_dictionary("/config/dict.txt")
+        jieba.load_userdict("/config/dict.txt")
+        stopword_list = get_stopword_list('/config/hit_stopwords.txt')
     except:
         print('自定应词典不存在')
-    seg_list = jieba.cut(str, cut_all=False)
-    return '#' + " #".join(seg_list)
+    str = str.replace(" ", "")
+    seg_list = jieba.lcut(str, cut_all=False)
+    res_list = []
+    for w in seg_list:
+        if w not in stopword_list:
+            res_list.append('#' + w)
+    return res_list
 
 
 @retry(stop=stop_after_attempt(4), wait=wait_fixed(10))
