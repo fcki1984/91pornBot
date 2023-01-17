@@ -24,8 +24,9 @@ def get_stopword_list(file):
         stopword_list = [word.strip('\n') for word in f.readlines()]
     return stopword_list
 
+
 async def seg(str):
-    stopword_list=[]
+    stopword_list = []
     try:
         jieba.load_userdict("/config/word.txt")
         jieba.load_userdict("/config/dict.txt")
@@ -38,7 +39,7 @@ async def seg(str):
     for w in seg_list:
         if w not in stopword_list:
             res_list.append('#' + w)
-    return res_list
+    return " ".join(seg_list)
 
 
 @retry(stop=stop_after_attempt(4), wait=wait_fixed(10))
@@ -105,7 +106,6 @@ async def m3u8ToMp4(input, output):
     )
     await ff.run_async()
     await ff.wait()
-
 
 
 async def genIpaddr():
