@@ -2,20 +2,34 @@ import asyncio
 import datetime
 import logging
 import os
+import platform
 import random
 import re
-import shutil
 from urllib import parse
-import cv2
-import aiohttp
-import ffmpy3
-import jieba
 
+import aiohttp
+import cv2
+import jieba
 # 分词
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 headers = None
 jieba.setLogLevel(logging.ERROR)
+
+ffmpe_root = 'ffmpeg'
+
+if platform.system().lower() == 'windows':
+    proxy = 'http://127.0.0.1:10809'
+    proxies = {
+        'https': proxy
+    }
+elif platform.system().lower() == 'linux':
+    proxy = None
+    proxies = None
+    # for root, dirs, files in os.walk("/root/.cache/ms-playwright/", topdown=False):
+    #     for name in files:
+    #         if name == 'ffmpeg-linux':
+    #             ffmpe_root = os.path.join(root, name)
 
 
 # 读取停用词列表
@@ -45,29 +59,38 @@ async def seg(str):
 @retry(stop=stop_after_attempt(4), wait=wait_fixed(10))
 async def imgCover(input, output):
     # ffmpeg -i 001.jpg -vf 'scale=320:320'  001_1.jpg
-    ff = ffmpy3.FFmpeg(
-        inputs={input: None},
-        outputs={output: ['-y', '-loglevel', 'quiet']}
-    )
-    await ff.run_async()
-    await ff.wait()
+    print('截图入参:', input, output)
+    command = '''%s -i  "%s" -y -loglevel quiet "%s" ''' % (
+        ffmpe_root, input, output)
+    proc = await asyncio.create_subprocess_shell(
+        command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE)
+
+    stdout, stderr = await proc.communicate()
+
+    print(f'[{command!r} exited with {proc.returncode}]')
 
 
 # 截取视频
 async def segVideo(input, output, start='25', end=''):
-    quiet_ = ['-y', '-c:v', 'copy', '-c:a', 'copy', '-avoid_negative_ts', '1',
-              '-loglevel', 'quiet'
-              ]
     if end != '':
-        quiet_.append('-t')
-        quiet_.append(end)
-    ff = ffmpy3.FFmpeg(
-        inputs={input: ['-ss', start]},
-        outputs={output: quiet_}
-    )
-    print(ff.cmd)
-    await ff.run_async()
-    await ff.wait()
+        command = '%s -ss %s -i "%s" -y -c:v copy -c:a copy -avoid_negative_ts 1 -t %s -loglevel quiet "%s" ' % (
+            ffmpe_root,
+            start, input, end, output)
+    else:
+        command = '%s -ss %s -i "%s" -y -c:v copy -c:a copy -avoid_negative_ts 1 -loglevel quiet  "%s" ' % (ffmpe_root,
+                                                                                                            start,
+                                                                                                            input,
+                                                                                                            output)
+    proc = await asyncio.create_subprocess_shell(
+        command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE)
+
+    stdout, stderr = await proc.communicate()
+
+    print(f'[{command!r} exited with {proc.returncode}]')
 
 
 def getVideoDuration(input):
@@ -89,23 +112,19 @@ def checkStrCount(str_source, str_check):  # str_source：源字符串；str_che
 @retry(stop=stop_after_attempt(4), wait=wait_fixed(10))
 async def imgCoverFromFile(input, output):
     # ffmpeg -i 001.jpg -vf 'scale=320:320'  001_1.jpg
-    ff = ffmpy3.FFmpeg(
-        inputs={input: None},
-        outputs={output: ['-y', '-vframes', '1', '-loglevel', 'quiet']}
-    )
-    await ff.run_async()
-    await ff.wait()
+    command = ''' %s -i "%s" -y -vframes 1   "%s" ''' % (
+        ffmpe_root, input, output)
+    proc = await asyncio.create_subprocess_shell(
+        command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE)
+
+    stdout, stderr = await proc.communicate()
+
+    print(f'[{command!r} exited with {proc.returncode}]')
 
 
-@retry(stop=stop_after_attempt(4), wait=wait_fixed(10))
-async def m3u8ToMp4(input, output):
-    #  ffmpeg  -i "http://xxxxxx/video/movie.m3u8" -vcodec copy -acodec copy -absf aac_adtstoasc  output.mp4
-    ff = ffmpy3.FFmpeg(
-        inputs={input: None},
-        outputs={output: ['-y', '-c', 'copy', ]}
-    )
-    await ff.run_async()
-    await ff.wait()
+# asyncio.get_event_loop().run_until_complete( imgCoverFromFile('754744.jpg','out.png'))
 
 
 async def genIpaddr():
@@ -201,11 +220,17 @@ async def down(url, viewkey):
 
 
 # 视频合并方法，使用ffmpeg
-def merge(concatfile, viewkey):
+async def merge(concatfile, viewkey):
     try:
-        path = viewkey + '/' + viewkey + '.mp4'
-        command = '''ffmpeg -y -f concat -i %s -bsf:a aac_adtstoasc -loglevel quiet -c copy  %s''' % (concatfile, path)
-        os.system(command)
+        path = f'{viewkey}/{viewkey}.mp4'
+        command = '''%s -y -f concat -i "%s" -bsf:a aac_adtstoasc  -c copy   "%s"''' % (
+            ffmpe_root, concatfile, path)
+        proc = await asyncio.create_subprocess_shell(
+            command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE)
+        stdout, stderr = await proc.communicate()
+        print(f'[{command!r} exited with {proc.returncode}]')
         print('视频合并完成')
     except:
         print('合并失败')
@@ -224,6 +249,6 @@ async def download91(url, viewkey, max=200):
             tasks.append(task)
 
         await asyncio.wait(tasks)
-    merge(concatfile, viewkey)
+    await merge(concatfile, viewkey)
     end = datetime.datetime.now().replace(microsecond=0)
     print('写文件及下载耗时：' + str(end - start))

@@ -6,7 +6,6 @@ hachoir
 tenacity
 jieba
 APScheduler
-ffmpy3
 aiohttp[speedups]
 uvloop
 playwright
