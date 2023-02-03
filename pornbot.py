@@ -59,7 +59,7 @@ async def getFromredis(key):
 
 @bot.on(events.NewMessage(pattern='/start'))
 async def send_welcome(event):
-    await event.client.send_message(event.chat_id, '向我发送91视频链接，获取视频,有问题请留言 ')
+    await event.client.send_message(event.chat_id, '向我发送91视频链接，获取视频,有问题请留言 /help 查看详情 ')
 
 
 @bot.on(events.NewMessage(pattern='/get91home'))
@@ -67,17 +67,16 @@ async def send_welcome(event):
     await event.client.send_message(event.chat_id, f'免翻地址: {await get91Home()}')
 
 
+@bot.on(events.NewMessage(pattern='/revideo91'))
+async def send_welcome(event):
+    await event.client.send_message(event.chat_id, '开始执行爬取.....')
+    await page91DownIndex()
+    await event.client.send_message(event.chat_id, '执行爬取结束.....')
+
 @bot.on(events.NewMessage(pattern='/help'))
 async def send_welcome(event):
-    await event.client.send_message(event.chat_id, '''常见问题:
-         1.如何设置用户名?
-
-           点击头像设置.
-
-         2.我发送的链接后,没收到视频
-
-           部分高清视频刚发布后还在转码，大概在视频发布时间一小时后再尝试发送链接下载.  
-
+    await event.client.send_message(event.chat_id, '''向我发送91视频网站内 https://91porn.com/ 的视频链接，获取视频。
+如发送的链接后,没收到视频原因是部分高清视频刚发布后还在转码，大概在视频发布时间一小时后再尝试发送链接下载。
 ''')
 
 
@@ -117,8 +116,7 @@ async def echo_all(event):
             except:
                 print("消息已被删除或不存在，无法转发")
             await handleMd(event, viewkey, viewkey_url)
-    else:
-        print("None")
+
 
 
 async def handleMd(event, viewkey, viewkey_url):

@@ -169,7 +169,5 @@ async def genIpaddr():
 
 async def get91Home():
     context, page = await init_browser()
-    await page.goto('https://www.ebay.com/usr/91home', wait_until="domcontentloaded")
-    return await page.evaluate('''() => {
-           return $("section.str-about-description__about-intro > div > span").text();
-        }''')
+    await page.goto('https://www.91zuixindizhi.com', wait_until="networkidle")
+    return  page.url
