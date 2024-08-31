@@ -197,6 +197,7 @@ async def handle91(event, viewkey, viewkey_url):
             os.makedirs(viewkey)
 
         if '.mp4' in videoinfo.realM3u8:
+            print(f"Running util.run with m3u8_url: {videoinfo.realM3u8} and viewkey: {viewkey}")
             await  util.run(videoinfo.realM3u8, viewkey)
         else:
 
