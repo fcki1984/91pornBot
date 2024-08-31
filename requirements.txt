@@ -8,5 +8,5 @@ jieba
 APScheduler
 aiohttp[speedups]
 uvloop
-playwright
+playwright==1.3.0
 opencv-python
