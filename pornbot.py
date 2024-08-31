@@ -25,6 +25,11 @@ captionTemplate = '''标题: %s
 '''
 captionTemplateMd = '''标题: %s
 '''
+import os
+from dotenv import load_dotenv
+
+# 加载 .env 文件中的环境变量
+load_dotenv()
 
 REDIS_HOST = os.getenv('REDIS_HOST')
 REDIS_PORT = int(os.getenv('REDIS_PORT'))
