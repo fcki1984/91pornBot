@@ -89,7 +89,7 @@ async def getVideoInfo91(url):
         if int(length) > 0:
             if '.mp4' in real_m3u8:
                 # realM3u8 = realM3u8.replace('/mp43', '/mp4hd')
-                pass
+                pass    
             else:
                 real_m3u8 = real_m3u8.replace('/m3u8', '/m3u8hd')
 
