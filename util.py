@@ -12,7 +12,7 @@ import cv2
 import jieba
 # 分词
 from tenacity import retry, stop_after_attempt, wait_fixed
-
+from urllib.parse import urlparse, parse_qs
 headers = None
 jieba.setLogLevel(logging.ERROR)
 
@@ -139,18 +139,29 @@ async def genIpaddr():
 @retry(stop=stop_after_attempt(5), wait=wait_fixed(2))
 async def run(session, url, viewkey, sem=asyncio.Semaphore(500)):
     async with sem:
-        if url.endswith('.mp4'):
+        # 解析URL，获取路径部分
+        parsed_url = urlparse(url)
+        path = parsed_url.path
+
+        if path.endswith('.mp4'):
             filename = viewkey + '.mp4'
-        elif url.endswith('.jpg'):
-            filename = re.search('([a-zA-Z0-9-_]+.jpg)', url).group(1).strip()
-            filename = filename.removesuffix('.jpg')
-            filename = filename + '.ts'
+        elif path.endswith('.jpg'):
+            filename = re.search('([a-zA-Z0-9-_]+.jpg)', path)
+            if filename:
+                filename = filename.group(1).strip().removesuffix('.jpg') + '.ts'
+            else:
+                raise ValueError("URL does not match expected pattern for .jpg: " + url)
+        elif path.endswith('.ts'):
+            match = re.search('([a-zA-Z0-9-_]+.ts)', path)
+            if match:
+                filename = match.group(1).strip()
+            else:
+                raise ValueError("URL does not match expected pattern for .ts: " + url)
         else:
-            filename = re.search('([a-zA-Z0-9-_]+.ts)', url).group(1).strip()
+            raise ValueError("Unsupported file type in URL: " + url)
 
         async with session.get(url) as r:
-            # print('下载：',url)
-            if (r.status == 503):
+            if r.status == 503:
                 print('下载失败,抛出重试')
                 raise RuntimeError('抛出重试')
             with open(viewkey + '/' + filename, "wb") as fp:
@@ -159,10 +170,12 @@ async def run(session, url, viewkey, sem=asyncio.Semaphore(500)):
                     if not chunk:
                         break
                     fp.write(chunk)
-                if url.endswith('.jpg'):
+                if path.endswith('.jpg'):
                     fp.seek(0x00)
                     fp.write(b'\xff\xff\xff\xff')
                 print("\r", '任务文件 ', filename, ' 下载成功', end="", flush=True)
+
+
 
     # print("\r", '任务文件 ', filename, ' 下载成功', end="", flush=True)
 
