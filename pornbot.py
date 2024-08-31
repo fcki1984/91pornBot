@@ -1,5 +1,5 @@
 import asyncio
-
+import aiohttp 
 import uvloop
 
 from pyp.play import getMaDou, getHs, getVideoInfo91, page91Index, get91Home
@@ -205,7 +205,9 @@ async def handle91(event, viewkey, viewkey_url):
             return
         if '.mp4' in videoinfo.realM3u8:
             print(f"Running util.run with m3u8_url: {videoinfo.realM3u8} and viewkey: {viewkey}")
-            await  util.run(videoinfo.realM3u8, viewkey)
+            async with aiohttp.ClientSession() as session:
+                await util.run(session, videoinfo.realM3u8, viewkey)
+
         else:
 
             try:
